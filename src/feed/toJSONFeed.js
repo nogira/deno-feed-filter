@@ -52,7 +52,12 @@ export async function toJSONFeed(feed, cacheInfo) {
                 itemsIDCache = itemsCache.map(item => item.id);
             }
             
-            const items = feedJSON.item || feedJSON.entry;
+            let items = feedJSON.item || feedJSON.entry;
+            // if only 1 item, put in array so it's still processed in the loop
+            const isArray = items.splice && true;
+            if (! isArray) {
+                items = [items];
+            }
             const JSONFeedItems = [];
             for (const item of items) {
                 /* was going to insert the filter here instead of running filter
