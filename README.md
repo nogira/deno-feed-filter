@@ -36,3 +36,9 @@ Small self-hosted server that allows you to input rss/atom/json feeds, filter th
 2. `cd` to it's folder
 3. `deno run --allow-net --allow-read=./ --allow-write=./feed_cache app.js`
 4. Start entering urls into you feed reader
+
+<br>
+
+<h2>
+  <a href="https://nogira.github.io/generate/donate.html" ><b>Support Me 🌞</b></a>
+</h2>
