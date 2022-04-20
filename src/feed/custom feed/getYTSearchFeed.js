@@ -1,25 +1,10 @@
-// import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
-
 export async function getYTSearchFeed(url, query, cacheInfo) {
     const htmlStr = await fetch(url).then(r => r.text());
     let data = htmlStr.match(/(?<=<script.+?var ytInitialData = ).+?(?=;<\/script>)/)[0];
         data = JSON.parse(data);
-
-    // const doc = new DOMParser().parseFromString(htmlString, "text/html");
-    // const scripts = doc.querySelectorAll("script") //?.textContent;
-    // let data;
-    // for (let script of scripts) {
-    //     const text = script.textContent;
-    //     if (/^var ytInitialData/.test(text)) {
-    //         // remove "var ytInitialData = " from start and ";" from end
-    //         data = text.slice(20, -1);
-    //         data = JSON.parse(data);
-    //         break;
-    //     }
-    // }
-
     const videos = data.contents.twoColumnSearchResultsRenderer.primaryContents
         .sectionListRenderer.contents[0].itemSectionRenderer.contents;
+
     const JSONFeed = {
         version: "https://jsonfeed.org/version/1.1",
         title: `YouTube Search Feed - ${query}`,
@@ -77,11 +62,11 @@ export async function getYTSearchFeed(url, query, cacheInfo) {
                     authors: [{
                         name: item?.longBylineText?.runs?.[0]?.text,
                     }],
-                    views: item?.viewCountText?.simpleText
-                                ?.replace(/ views?|\.|,/, "")
+                    views: Number(item?.viewCountText?.simpleText
+                                ?.replace(/ views?|\.|,/g, "")
                                 .replace("K", "000")
                                 .replace("M", "000000")
-                                .replace("No", "0"),
+                                .replace("No", "0")),
                 });
             }
             return JSONFeedItems

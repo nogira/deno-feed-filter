@@ -181,7 +181,17 @@ app.get('/yt/s/', async (req, res) => {
     */
     const {query, ...filters} = req.query;
     const url = `https://www.youtube.com/results?search_query=${query}&sp=CAI`;
-    let feed = await getYTSearchFeed(url, query, req.cacheInfo);                // end part is to sort by newest first
+    let feed = await getYTSearchFeed(url, query, req.cacheInfo);    // end part of url is to sort by newest first
+        // filter out items that have over 50% latin characters
+        feed.items = feed.items.filter(item => {
+            const latinChars = item.title.match(/[a-z]/gi)?.length;
+            const totalChars = item.title.length;
+             // non-english usually under 20%, english usually over 80%, so 
+             // split the difference
+            const percentLatin = latinChars / totalChars;
+            // add item if over 50% latin characters
+            return percentLatin > 0.5;
+        });
         feed = await filter(feed, filters);
         feed = await updateCache(feed, req.cacheInfo.id);
     console.log(req.url); trackRequests.log("New");
