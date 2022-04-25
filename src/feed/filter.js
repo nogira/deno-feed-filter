@@ -40,6 +40,10 @@ export async function filter(feed, filters) {
                 console.log("Unknown filter key: " + key);
             }
         }
+        // skip video items with 0 views, as it means the video hasn't been 
+        // posted yet
+        if (item.views === 0) { continue loop1};
+
         // if item has passsed all filters, add it to the filteredItems
         filteredItems.push(item);
     }

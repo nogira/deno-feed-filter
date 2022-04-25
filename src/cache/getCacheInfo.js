@@ -2,7 +2,17 @@ import { cacheIndex } from '../../app.js';
 
 export async function getCacheInfo(reqURL) {
     const cacheID = reqURL.replace(/^.*?0\/|\W/g, "");
-    const urlNotCached = ! cacheIndex[reqURL];
+    const urlInCacheIndex = cacheIndex[reqURL];
+
+    // if url IS in cache index, make sure it's also in file cache
+    let urlHasCacheFile;
+    if (urlInCacheIndex) {
+        await Deno.stat(`./feed_cache/${cacheID}.json`)
+            .then(() => {urlHasCacheFile = true})
+            .catch(() => {urlHasCacheFile = false});
+    }
+
+    const urlNotCached = (! urlInCacheIndex) && (! urlHasCacheFile);
     if (urlNotCached) {
         cacheIndex[reqURL] = {
             lastRequest: Date.now(),

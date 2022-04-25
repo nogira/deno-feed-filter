@@ -1,12 +1,16 @@
 import { toJSONFeed } from './toJSONFeed.js';
 
-export async function getFeed(url, cacheInfo) {
-    const r = await fetch(url); // 99% of time in this function is spent running fetch()
-    const feed = await r.text();
-    // if RSS or Atom, convert to JSON Feed
+export async function getFeed(url) {
+    const req = await fetch(url).catch(() => {
+        console.log("Error fetching feed:\n" + url);
+    }); // 99% of time in this function is spent running fetch()
+    const feed = await req.text();
+
+    // if RSS or Atom, convert to JSON Feed, else grab the json feed
     if (feed.includes('<rss') || feed.includes('<feed')) {
-        const JSONFeed = toJSONFeed(feed, cacheInfo);
+        const JSONFeed = toJSONFeed(feed);
         return JSONFeed;
+    } else {
+        return await req.json();
     }
-    return feed;
 }

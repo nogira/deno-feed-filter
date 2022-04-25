@@ -1,4 +1,4 @@
-export async function getYTSearchFeed(url, query, cacheInfo) {
+export async function getYTSearchFeed(url, query) {
     const htmlStr = await fetch(url).then(r => r.text());
     let data = htmlStr.match(/(?<=<script.+?var ytInitialData = ).+?(?=;<\/script>)/)[0];
         data = JSON.parse(data);
@@ -7,70 +7,58 @@ export async function getYTSearchFeed(url, query, cacheInfo) {
 
     const JSONFeed = {
         version: "https://jsonfeed.org/version/1.1",
-        title: `YouTube Search Feed - ${query}`,
+        title: `YouTube Query - ${query}`,
         home_page_url: "https://www.youtube.com/",
-        items: await (async () => {
-            let itemsIDCache;
-            if (cacheInfo.isCached) {
-                const cache = await Deno.readTextFile(`./feed_cache/${cacheInfo.id}.json`);
-                const itemsCache = JSON.parse(cache).items;
-                itemsIDCache = itemsCache.map(item => item.id);
-            }
-
-            const JSONFeedItems = [];
-            for (let item of videos) {
-                item = item.videoRenderer;
-                if (! item) { continue };
-
-                /* skip if same id as cached item to prevent youtube-search 
-                items being when date inevitably changed due to the nature of 
-                how to date is calculated */
-                const id = item.videoId;
-                if (itemsIDCache?.includes(item.id)) { continue };
-
-                JSONFeedItems.push({
-                    id: id,
-                    url: `https://www.youtube.com/watch?v=${item.videoId}`,
-                    title: item?.title?.runs?.[0]?.text,
-                    content_html: (() => {
-                        const img = item?.thumbnail?.thumbnails?.[0]?.url
-                            ?.replace(/(?<=\.jpg).*/, "");
-                        const imgTag = `<img width=\"50%\" src=\"${img}\"><br><br>`;
-                        const text = item?.detailedMetadataSnippets?.[0]?.snippetText?.runs
-                            ?.map(x => x.text)?.join("");
-                        return imgTag + text;
-                    })() || "",
-                    date_published: (() => {
-                        const timeText = item?.publishedTimeText?.simpleText;
-                        const num = timeText.match(/\d+/)?.[0];
-                        let multiplier;
-                        if (/minute/.test(timeText)) {
-                            multiplier = 1000 * 60;
-                        } else if (/hour/.test(timeText)) {
-                            multiplier = 1000 * 60 * 60;
-                        } else if (/day/.test(timeText)) {
-                            multiplier = 1000 * 60 * 60 * 24;
-                        } else if (/month/.test(timeText)) {
-                            multiplier = 1000 * 60 * 60 * 24 * 30;
-                        } else if (/year/.test(timeText)) {
-                            multiplier = 1000 * 60 * 60 * 24 * 365;
-                        } else {
-                            return new Date(Date.now()).toISOString();
-                        }
-                        return new Date(Date.now() - (num * multiplier)).toISOString();
-                    })(),
-                    authors: [{
-                        name: item?.longBylineText?.runs?.[0]?.text,
-                    }],
-                    views: Number(item?.viewCountText?.simpleText
-                                ?.replace(/ views?|\.|,/g, "")
-                                .replace("K", "000")
-                                .replace("M", "000000")
-                                .replace("No", "0")),
-                });
-            }
-            return JSONFeedItems
-        })(),
     }
+
+    const JSONFeedItems = [];
+    for (let video of videos) {
+        video = video.videoRenderer;
+        if (! video) { continue };
+
+        const item = {
+            id: video.videoId,
+            url: `https://www.youtube.com/watch?v=${video.videoId}`,
+            title: video?.title?.runs?.[0]?.text,
+        }
+        
+        const imageURL = video?.thumbnail?.thumbnails?.[0]?.url
+            ?.replace(/(?<=\.jpg).*/, "");
+        const img = `<img width=\"50%\" src=\"${imageURL}\"><br><br>`;
+        const desc = video?.detailedMetadataSnippets?.[0]?.snippetText?.runs
+            ?.map(x => x.text)?.join("") || "";
+        item.content_html = (img + desc);
+
+        const timeText = video?.publishedTimeText?.simpleText;
+        const num = timeText.match(/\d+/)?.[0];
+        let multiplier = 1;
+        let ISODate = "";
+        if (/minute/.test(timeText)) {
+            multiplier = 1000 * 60;
+        } else if (/hour/.test(timeText)) {
+            multiplier = 1000 * 60 * 60;
+        } else if (/day/.test(timeText)) {
+            multiplier = 1000 * 60 * 60 * 24;
+        } else if (/month/.test(timeText)) {
+            multiplier = 1000 * 60 * 60 * 24 * 30;
+        } else if (/year/.test(timeText)) {
+            multiplier = 1000 * 60 * 60 * 24 * 365;
+        } else {
+            ISODate = new Date(Date.now()).toISOString();
+        }
+        ISODate =  new Date(Date.now() - (num * multiplier)).toISOString();
+        item.date_published = ISODate;
+
+        item.authors = [{ name: video?.longBylineText?.runs?.[0]?.text }];
+        item.views = Number(video?.viewCountText?.simpleText
+                        ?.replace(/ views?|\.|,/g, "")
+                        .replace("K", "000")
+                        .replace("M", "000000")
+                        .replace("No", "0"));
+
+        JSONFeedItems.push(video);
+    }
+    JSONFeed.items = JSONFeedItems;
+
     return JSONFeed;
 }

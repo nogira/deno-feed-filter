@@ -3,7 +3,82 @@ import { XMLParser } from 'https://cdn.skypack.dev/fast-xml-parser'
 import { xml2jsNestedKeySelector as s } from './xml2jsNestedKeySelector.js';
 import { cleanObject } from '../cleanObject.js';
 
-export async function toJSONFeed(feed, cacheInfo) {
+
+/**
+ * https://www.jsonfeed.org/version/1.1/
+ */
+// interface JSONFeed {
+//     version: string;
+//     title: string;
+//     home_page_url?: string;
+//     feed_url?: string;
+//     description?: string;
+//     user_comment?: string;
+//     next_url?: string;
+//     icon?: string;
+//     favicon?: string;
+//     authors?: JSONFeedAuthor[];
+//     language?: string;
+//     expired?: boolean;
+//     hubs?: JSONHub[];
+//     items: JSONFeedItem[];
+// }
+// interface JSONFeedAuthor {
+//     name?: string;
+//     url?: string;
+//     avatar?: string;
+// }
+// interface JSONHub {
+//     type: string;
+//     url: string;
+// }
+// interface JSONFeedItem {
+//     id: string;
+//     url?: string;
+//     external_url?: string;
+//     title?: string;
+//     content_html?: string;
+//     content_text?: string;
+//     summary?: string;
+//     image?: string;
+//     banner_image?: string;
+//     date_published?: string;
+//     date_modified?: string;
+//     authors?: JSONFeedAuthor;
+//     tags?: string[];
+//     language?: string;
+//     attachments?: JSONFeedAttachment[];
+// }
+// interface JSONFeedAttachment {
+//     url: string;
+//     mime_type: string;
+//     title?: string;
+//     size_in_bytes?: number;
+//     duration_in_seconds?: number;
+// }
+
+
+
+
+/* 
+
+change from
+let JSONFeed = {
+    // etc
+}
+cleanObject(JSONFeed);
+
+to:
+let JSONFeed = {
+    // compulsary vars
+}
+// optional vars
+
+*/
+
+
+
+export async function toJSONFeed(feed) {
     // Step 1: Convert XML to JSON
     const options = {
         preserveOrder: false,
@@ -45,12 +120,6 @@ export async function toJSONFeed(feed, cacheInfo) {
         expired: "",
         hubs: [{type: "", url: ""}],
         items: await (async () => {
-            let itemsIDCache;
-            if (cacheInfo.isCached) {
-                const cache = await Deno.readTextFile(`./feed_cache/${cacheInfo.id}.json`);
-                const itemsCache = JSON.parse(cache).items;
-                itemsIDCache = itemsCache.map(item => item.id);
-            }
             
             let items = feedJSON.item || feedJSON.entry;
             // if only 1 item, put in array so it's still processed in the loop
@@ -62,18 +131,9 @@ export async function toJSONFeed(feed, cacheInfo) {
             for (const item of items) {
                 /* was going to insert the filter here instead of running filter
                 after, but the computation is so small compared to fetch so idc */
-                
-                // skip video items with 0 views, as it means the video hasn't been posted yet
-                const views = item?.["media:group"]?.["media:community"]?.["media:statistics"]?.["@_views"];
-                if (views === "0") { continue };
-
-                /* skip if same id as cached item to prevent duplicates when 
-                these items are appended to array of old items */
-                const id = s(item,"guid") || s(item,"id");
-                if (itemsIDCache?.includes(item.id)) { continue };
 
                 JSONFeedItems.push({
-                    id: id,
+                    id: s(item,"guid") || s(item,"id"),
                     url: item?.link?.["@_href"] || s(item,"link") || item?.link,
                     external_url: "",
                     title: s(item,"title"),
@@ -122,7 +182,7 @@ export async function toJSONFeed(feed, cacheInfo) {
                         size_in_bytes: 0,
                         duration_in_seconds: 0,
                     }],
-                    views: views,
+                    views: Number(item?.["media:group"]?.["media:community"]?.["media:statistics"]?.["@_views"]),
                 });
             };
             return JSONFeedItems;

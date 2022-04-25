@@ -1,10 +1,23 @@
-export async function updateCache(feed, cacheID) {
-    const fp = `./feed_cache/${cacheID}.json`
-    const onlyItems = ! feed.items;
-    if (onlyItems) {
-        const cache = await Deno.readTextFile(fp);
-        const old = JSON.parse(cache);
-        const items = [...old.items, ...feed.items]
+export async function updateCache(feed, cacheInfo) {
+
+    const cacheID = cacheInfo.id;
+    const cachePath = `./feed_cache/${cacheID}.json`
+
+    // if cache is available, add items to cache, otherwise create cache
+    if (cacheInfo.isCached) {
+        /* remove if same id as cached item to prevent duplicates when 
+        these items are appended to array of old items */
+        const cache = await Deno.readTextFile(cachePath);
+        const oldFeed = JSON.parse(cache);
+        const oldItems = oldFeed.items;
+        const oldItemIDs = oldItems.map(item => item.id);
+        let newItems = feed.items;
+        // filter out newItems that are already in oldItems
+        newItems.filter(item => ! oldItemIDs.includes(item.id));
+
+        // join newItems and oldItems
+        const items = [...oldItems, ...newItems]
+
         /* CHECK IF ITEMS > 100, IF SO DELETE THE OLDEST */
         let oneHundredItems;
         if (items.length > 100) {
@@ -28,8 +41,12 @@ export async function updateCache(feed, cacheID) {
                 }
             }
         }
+        // if filtered to one hundred items, use that, else use items
         feed.items = oneHundredItems || items;
+    } else {
+        // cache not available so nothing to do except save feed to cache
     }
-    await Deno.writeTextFile(fp, JSON.stringify(feed));
+    // save feed to cache
+    await Deno.writeTextFile(cachePath, JSON.stringify(feed));
     return feed;
 }

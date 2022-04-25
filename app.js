@@ -3,6 +3,8 @@
 
 FOR USE
 deno run --allow-net --allow-read=./ --allow-write=./feed_cache app.js
+or (though its like 30mb instead of <1mb)
+deno compile --lite --allow-net --allow-read=./ --allow-write=./feed_cache app.js
 
 FOR DEVELOPMENT
 deno run --allow-net --allow-read=./ --allow-write=./feed_cache --watch app.js
@@ -16,9 +18,9 @@ import { sleep } from "./src/sleep.js";
 import { getCacheInfo } from './src/cache/getCacheInfo.js'
 import { updateCache } from './src/cache/updateCache.js'
 import { getFeed } from './src/feed/getFeed.js';
+import { getTwitterSearchFeed } from './src/feed/custom feed/getTwitterSearchFeed.js';
 import { getYTSearchFeed } from './src/feed/custom feed/getYTSearchFeed.js';
 import { filter } from './src/feed/filter.js';
-import { twitterFormatting } from './src/feed/custom formatting/twitterFormatting.js';
 import { youtubeFormatting } from './src/feed/custom formatting/youtubeFormatting.js';
 
 const app = opine();
@@ -117,90 +119,142 @@ app.get('/getYTID', async (req, res) => {
     res.send({id: id})
 })
 
+
 // applied right before every get request below
 app.use(async (req, res, next) => {
     const cacheInfo = await getCacheInfo(req.url);
+
     // trackRequests.log("Any");
     if (cacheInfo.isRecentlyCached) {
         const cache = await Deno.readTextFile(`./feed_cache/${cacheInfo.id}.json`);
         const feed = JSON.parse(cache);
         res.send(feed);
     } else {
+        console.log("START: " + req.url);
         req.cacheInfo = cacheInfo;
         next();
     }
 });
 
-app.get('/default/', async (req, res) => {
+app.get('/default/', async (req, res, next) => {
     /*
     example URL:
     http://localhost:8000/default/?url=https://somefeed.com
     */
-    const {url, ...filters} = req.query;
-    let feed = await getFeed(url, req.cacheInfo);
-        feed = await filter(feed, filters);
-        feed = await updateCache(feed, req.cacheInfo.id);
-    console.log(req.url); trackRequests.log("New");
-    res.send(feed);
+    const { url, ...filters } = req.query;
+    req.filters = filters;
+    req.feed = await getFeed(url);
+    next();
 })
 
-app.get('/twitter/', async (req, res) => {
+app.get('/twitter/', async (req, res, next) => {
     /*
     example URL:
     http://localhost:8000/twitter/?query=from:balajis+-filter:replies
     */
-    const {query, ...filters} = req.query;
-    const url = 'https://nitter.net/search/rss?q=' + query;
-    let feed = await getFeed(url, req.cacheInfo); // 99.9% of time in this function is spent running getFeed()
-        feed = await filter(feed, filters);
-        feed = await twitterFormatting(feed);
-        feed = await updateCache(feed, req.cacheInfo.id);
-    console.log(req.url); trackRequests.log("New");
-    res.send(feed);
+    const { query, ...filters } = req.query;
+    req.filters = filters;
+    req.feed = await getTwitterSearchFeed(query); // 99.9% of time in this function is spent running getFeed()
+    next();
 })
 
-app.get('/yt/c/:channelID/', async (req, res) => {
+app.get('/yt/c/:channelID/', async (req, res, next) => {
     /*
     example URL:
     http://localhost:8000/yt/c/UC5WjFrtBdufl6CZojX3D8dQ/?title_excl=tesla
     */
-    const filters = req.query;
+
+
+
+
+    /*
+    change this to input channel url, and have this find the channel id
+    */
+
+
+
+
+    req.filters = req.query;
     const url = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + req.params.channelID;
-    let feed = await getFeed(url, req.cacheInfo);
-        feed = await filter(feed, filters);
-        feed = await youtubeFormatting(feed);
-        feed = await updateCache(feed, req.cacheInfo.id);
-    console.log(req.url); trackRequests.log("New");
-    res.send(feed);
+    req.feed = await getFeed(url);
+    req.feed = await youtubeFormatting(req.feed);
+    next();
 })
 
-app.get('/yt/s/', async (req, res) => {
+app.get('/yt/s/', async (req, res, next) => {
     /*
     example URL:
     http://localhost:8000/yt/s/?query=tesla
     */
-    const {query, ...filters} = req.query;
+    const { query, ...filters } = req.query;
+    req.filters = filters;
     const url = `https://www.youtube.com/results?search_query=${query}&sp=CAI`;
-    let feed = await getYTSearchFeed(url, query, req.cacheInfo);    // end part of url is to sort by newest first
-        // filter out items that have over 50% latin characters
-        feed.items = feed.items.filter(item => {
-            const latinChars = item.title.match(/[a-z]/gi)?.length;
-            const totalChars = item.title.length;
-             // non-english usually under 20%, english usually over 80%, so 
-             // split the difference
-            const percentLatin = latinChars / totalChars;
-            // add item if over 50% latin characters
-            return percentLatin > 0.5;
-        });
-        feed = await filter(feed, filters);
-        feed = await updateCache(feed, req.cacheInfo.id);
-    console.log(req.url); trackRequests.log("New");
-    res.send(feed);
+    req.feed = await getYTSearchFeed(url, query);    // end part of url is to sort by newest first
+
+
+
+
+    // add this to filter
+
+
+
+
+    // filter out items that have over 50% latin characters
+    req.feed.items = req.feed.items.filter(item => {
+        const latinChars = item.title.match(/[a-z]/gi)?.length;
+        const totalChars = item.title.length;
+            // non-english usually under 20%, english usually over 80%, so 
+            // split the difference
+        const percentLatin = latinChars / totalChars;
+        // add item if over 50% latin characters
+        return percentLatin > 0.5;
+    });
+    next();
 })
+
+// applied after every get request above
+app.use(async (req, res) => {
+    let feed = req.feed
+    // if-statement to ignore if its the homepage, not a feed request
+    if (feed) {
+        feed = await filter(feed, req.filters);
+        feed = await updateCache(feed, req.cacheInfo);
+        console.log(req.url); trackRequests.log("New");
+        res.send(feed);
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server has started on http://localhost:${PORT} 🚀`)
 });
+
+
+
+
+
+
+
+
+/*
+
+STILL NEED A WAY TO DELETE CACHED FILES WHEN THEY ARE NEVER REQUESTED BY 
+ANYTHING OTHER THAN THE AUTO-CACHE WHILE-LOOP
+
+SHOULD JUST TRACK THE NUMBER OF CACHE REQUESTS, AND IF 0 IN 1 WEEK, DELETE
+
+THIS OF COURSE COULD BE IMPEDED IF STILL WORKING ON THE CODE SINCE IT FETCHES 
+ALL URLS EVERY TIME THE CODE IS UPDATED AND SAVED
+ - could just do a manual reset by deleting the cache folder
+
+*/
+
+
+
+
+
+
+
+
 
 /*
 UPDATE RESULTS X HOURS SO FEEDS ARE INSTANTLY FETCHED BY FEED VIEWER SINCE FEEDS
@@ -210,9 +264,11 @@ while (true) {
     console.log("ℹ️ Updating cache...");
     for (const k in cacheIndex) {
         await fetch(`http://127.0.0.1:${PORT}` + k);
-        await sleep("1ms") // sleep 1ms to prevent blocking
+        await sleep("1sec") // sleep 1ms to prevent blocking
     }
     console.log("ℹ️ Cache updated.");
+    // due to sleep in loop above, this will always run slightly longer than 
+    // UPDATE_FREQ, so should never return a cache
     await sleep(UPDATE_FREQ);
 }
 
