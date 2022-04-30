@@ -125,9 +125,22 @@ app.get('/favicon.ico', async (req, res) => {
     res.send("");
 })
 app.get('/reset-cache-time', async (req, res) => {
+    /*
+    examples:
+    http://127.0.0.1:8000/reset-cache-time/?id=/yt/c/UCkrwgzhIBKccuDsi_SvZtnQ/
+    http://127.0.0.1:8000/reset-cache-time/?all=true
+    */
     // reset cache time to zero to allow a new cache update
-    cacheIndex[req.query.id].lastRequest = 0;
-    res.send(`<h1>Reset ${req.query.id} :)</h1>`);
+    const id = req.query.id
+    if (id) {
+        cacheIndex[id].lastRequest = 0;
+    } else if (req.query.all == "true") {
+        for (let key in cacheIndex) {
+            cacheIndex[key].lastRequest = 0;
+        }
+    }
+    
+    res.send(`<h1>Reset ${id || "all"} :)</h1>`);
 })
 
 

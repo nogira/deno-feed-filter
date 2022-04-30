@@ -11,14 +11,16 @@ export async function combineFeeds(oldFeed, newFeed) {
     const items = [...oldItems, ...newItems]
     // console.log(items.length);
 
+    // sort: newest first, oldest last
+    // converted dates to unix timestamps to allow sorting by date
+    items.sort((a, b) =>  Date.parse(b.date_published) - Date.parse(a.date_published));
+
     /* CHECK IF ITEMS > 100, IF SO DELETE THE OLDEST */
     let oneHundredItems;
     if (items.length > 100) {
-        // newest first, oldest last
-        // converted dates to unix timestamps to allow sorting by date
-        items.sort((a, b) =>  Date.parse(b.date_published) - Date.parse(a.date_published));
         const numToDelete = items.length - 100;
-        // remove last x items (oldest items over 100)
+        // since already sorted by newsest to oldest, remove last x items 
+        // (oldest items over 100)
         items.splice(100, numToDelete);
     }
 
