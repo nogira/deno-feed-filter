@@ -119,6 +119,17 @@ app.get('/getYTID', async (req, res) => {
     res.send({id: id})
 })
 
+// handle /favicon.ico request that is sent by netnewswire so it doesn't go in 
+// the cache index
+app.get('/favicon.ico', async (req, res) => {
+    res.send("");
+})
+app.get('/reset-cache-time', async (req, res) => {
+    // reset cache time to zero to allow a new cache update
+    cacheIndex[req.query.id].lastRequest = 0;
+    res.send(`<h1>Reset ${req.query.id} :)</h1>`);
+})
+
 
 // applied right before every get request below
 app.use(async (req, res, next) => {
@@ -203,8 +214,8 @@ app.get('/yt/s/', async (req, res, next) => {
     req.feed.items = req.feed.items.filter(item => {
         const latinChars = item.title.match(/[a-z]/gi)?.length;
         const totalChars = item.title.length;
-            // non-english usually under 20%, english usually over 80%, so 
-            // split the difference
+        // non-english usually under 20%, english usually over 80%, so 
+        // split the difference
         const percentLatin = latinChars / totalChars;
         // add item if over 50% latin characters
         return percentLatin > 0.5;
@@ -250,6 +261,15 @@ ALL URLS EVERY TIME THE CODE IS UPDATED AND SAVED
 
 
 
+// while (true) {
+//     // every 20 min
+//     // if last request was >10min ago
+//     // 1) delete getCache cache
+//     // 2) delete feed caches that have zero requests ONLY if >50% of requests have caches
+// }
+
+
+
 
 
 
@@ -263,8 +283,9 @@ ARE ALL CACHED
 while (true) {
     console.log("ℹ️ Updating cache...");
     for (const k in cacheIndex) {
-        await fetch(`http://127.0.0.1:${PORT}` + k);
-        await sleep("1sec") // sleep 1ms to prevent blocking
+        const endURL = k;
+        await fetch(`http://127.0.0.1:${PORT}` + endURL);
+        await sleep("100ms") // sleep 2s to prevent too many concurrent twitter requests that blocks loop
     }
     console.log("ℹ️ Cache updated.");
     // due to sleep in loop above, this will always run slightly longer than 

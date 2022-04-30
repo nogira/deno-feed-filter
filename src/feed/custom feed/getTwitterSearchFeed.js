@@ -1,5 +1,5 @@
-import { getSearchQueryTweetsFromQuery } from 'https://deno.land/x/deno_twitter_guest_api@v0.0.2/mod.ts'
-
+// import { queryToTweets } from 'https://deno.land/x/deno_twitter_guest_api@v0.1.0/mod.ts'
+import { queryToTweets } from '../../../../deno-twitter-guest-api/mod.ts'
 
 
 
@@ -8,15 +8,11 @@ import { getSearchQueryTweetsFromQuery } from 'https://deno.land/x/deno_twitter_
 /*
 
 IT SEEMS THIS FAILS TO GET RETWEETS SO TRY FIX !!!
+include:nativeretweets fixes it
 
 ALSO SEEMS TO EXCLUDE SOME TWEETS. GETTING DIRECT FROM PROFILE MIGHT BE ONLY 
 SOLUTION. THUS MIGHT BE FORCED TO CALL A SHIT-TONNE, SO PERHAPS VARY THE TIME OF
 EACH TWITTER FEED BASED ON THE AVERAGE TWEETS PER DAY
-
-
-
-could do no retweets of self filter option to stop pastryeth retweeting the same
-thread 10x
 
 */
 
@@ -24,11 +20,9 @@ thread 10x
 
 
 
-
-
 export async function getTwitterSearchFeed(query) {
 
-    const tweets = await getSearchQueryTweetsFromQuery(query);
+    const tweets = await queryToTweets(query);
 
     const JSONFeed = {
         version: "https://jsonfeed.org/version/1.1",
@@ -107,6 +101,7 @@ export async function getTwitterSearchFeed(query) {
         item.title = "🐦";
         if (tweet.isThread) {
             item.title += "🧵";
+            item.threadID = tweet.threadID;
         }
         if (hasImages) {
             item.title += "📷";

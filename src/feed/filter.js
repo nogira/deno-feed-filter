@@ -1,4 +1,7 @@
 export async function filter(feed, filters) {
+    /* was going to insert the filter here instead of running filter
+    after, but the computation is so small compared to fetch so idc */
+
     const items = feed.items
     // simple way to pass filter key such as "author" to get an item's author
     const filterKeyToItemKey = {
@@ -9,6 +12,11 @@ export async function filter(feed, filters) {
     const filteredItems = [];
     loop1:
     for (const item of items) {
+
+        /*
+        REMEMBER FILTERS WITH NUMBER VALS ARE STRINGS, SO CONVERT TO NUMBER
+        */
+
         // loop2:
         for (const key in filters) {
             const val = filters[key]
@@ -32,9 +40,23 @@ export async function filter(feed, filters) {
                 }
             } else if (key == "min_views") {
                 // item should have at least the min views
-                if (item.views < val) {
+                if (item.views < Number(val)) {
                     // skip adding item to filteredItems
                     continue loop1;
+                }
+            } else if (key == "no_self_retweets" && val == "true") {
+                /* remove retweets of mid-thread tweets from threads that have 
+                been posted/retweeted before */
+                const threadID = item.threadID;
+                const notFirstTweetinThread = threadID !== item.id;
+                if (threadID && notFirstTweetinThread) {
+                    // if main tweet (threadID) is already in feed, discard the 
+                    // tweet as its a retweet of a mid-thread tweet i've already
+                    // read
+                    const ids = items.map(item => item.id);
+                    if (ids.includes(threadID)) {
+                        continue loop1;
+                    }
                 }
             } else {
                 console.log("Unknown filter key: " + key);

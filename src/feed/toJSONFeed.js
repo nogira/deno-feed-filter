@@ -129,8 +129,6 @@ export async function toJSONFeed(feed) {
             }
             const JSONFeedItems = [];
             for (const item of items) {
-                /* was going to insert the filter here instead of running filter
-                after, but the computation is so small compared to fetch so idc */
 
                 JSONFeedItems.push({
                     id: s(item,"guid") || s(item,"id"),
