@@ -1,5 +1,5 @@
-// import { queryToTweets } from 'https://deno.land/x/deno_twitter_guest_api@v0.1.0/mod.ts'
-import { queryToTweets } from '../../../../deno-twitter-guest-api/mod.ts'
+import { queryToTweets } from 'https://deno.land/x/deno_twitter_guest_api@v0.1.0/mod.ts'
+// import { queryToTweets } from '../../../../deno-twitter-guest-api/mod.ts'
 
 
 
