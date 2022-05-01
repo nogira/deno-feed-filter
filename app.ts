@@ -15,18 +15,19 @@ deno run --allow-net --allow-read=./ --allow-write=./feed_cache --watch app.js
 import { opine } from "https://deno.land/x/opine@2.1.4/mod.ts";
 
 import { sleep } from "./src/sleep.js";
-import { getCacheInfo } from './src/cache/getCacheInfo.js'
-import { updateCache } from './src/cache/updateCache.js'
-import { getFeed } from './src/feed/getFeed.js';
-import { getTwitterSearchFeed } from './src/feed/custom feed/getTwitterSearchFeed.js';
-import { getYTSearchFeed } from './src/feed/custom feed/getYTSearchFeed.js';
-import { filter } from './src/feed/filter.js';
-import { youtubeFormatting } from './src/feed/custom formatting/youtubeFormatting.js';
+import { getCacheInfo } from './src/cache/getCacheInfo.ts'
+import { updateCache } from './src/cache/updateCache.ts'
+import { JSONFeed } from './src/feed/feedTypes.ts';
+import { getFeed } from './src/feed/getFeed.ts';
+import { getTwitterSearchFeed } from './src/feed/custom feed/getTwitterSearchFeed.ts';
+import { getYTSearchFeed } from './src/feed/custom feed/getYTSearchFeed.ts';
+import { filter } from './src/feed/filter.ts';
+import { youtubeFormatting } from './src/feed/custom formatting/youtubeFormatting.ts';
 
 const app = opine();
 export const PORT = 8000;
 export const UPDATE_FREQ = "1hrs"; // 🚨🚨🚨🚨 should swap to default every day at 6am (and no requests from 12am to 6am), but can be changed
-export let cacheIndex;
+export let cacheIndex: any;
 // check if folder and file exists, if not, create it
 // throws error if folder/file doesn't exist
 try {
@@ -39,9 +40,9 @@ try {
     cacheIndex = {};
 }
 
-const trackRequests = {
+const trackRequests: any = {
     Any: 0, New: 0,
-    log(type) {
+    log(type: string) {
         this[type]++;
         console.log(`${type}: `, this[type]);
     },
@@ -113,9 +114,9 @@ app.get('/', async (req, res) => {
     // logReq("Any");
 });
 app.get('/getYTID', async (req, res) => {
-    const id = await fetch(req.query.url + "/featured")
-                    .then(res => res.text())
-                    .then(text => text.match( /(?<=<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/).+?(?=">)/ )[0]);
+    const id: string | undefined = await fetch(req.query.url + "/featured")
+        .then(res => res.text())
+        .then((text: string) => text?.match( /(?<=<link rel="canonical" href="https:\/\/www.youtube.com\/channel\/).+?(?=">)/ )?.[0]);
     res.send({id: id})
 })
 
@@ -131,7 +132,7 @@ app.get('/reset-cache-time', async (req, res) => {
     http://127.0.0.1:8000/reset-cache-time/?all=true
     */
     // reset cache time to zero to allow a new cache update
-    const id = req.query.id
+    const id: string = req.query.id
     if (id) {
         cacheIndex[id].lastRequest = 0;
     } else if (req.query.all == "true") {
@@ -145,9 +146,8 @@ app.get('/reset-cache-time', async (req, res) => {
 
 
 // applied right before every get request below
-app.use(async (req, res, next) => {
-    const cacheInfo = await getCacheInfo(req.url);
-
+async function checkIfSendCache(req: any, res: any): Promise<any> {
+    const cacheInfo: any = await getCacheInfo(req.url);
     // trackRequests.log("Any");
     if (cacheInfo.isRecentlyCached) {
         const cache = await Deno.readTextFile(`./feed_cache/${cacheInfo.id}.json`);
@@ -155,20 +155,22 @@ app.use(async (req, res, next) => {
         res.send(feed);
     } else {
         console.log("START: " + req.url);
-        req.cacheInfo = cacheInfo;
-        next();
+        return cacheInfo
     }
-});
+}
 
-app.get('/default/', async (req, res, next) => {
+app.get('/default/', async (req, res) => {
     /*
     example URL:
     http://localhost:8000/default/?url=https://somefeed.com
     */
-    const { url, ...filters } = req.query;
-    req.filters = filters;
-    req.feed = await getFeed(url);
-    next();
+    const cacheInfo = await checkIfSendCache(req, res);
+    // if returns something, cache was not sent
+    if (cacheInfo) {
+        const { url, ...filters } = req.query;
+        const feed = await getFeed(url);
+        updateCacheAndSend(feed, filters, cacheInfo, req, res);
+    }
 })
 
 app.get('/twitter/', async (req, res, next) => {
@@ -176,10 +178,13 @@ app.get('/twitter/', async (req, res, next) => {
     example URL:
     http://localhost:8000/twitter/?query=from:balajis+-filter:replies
     */
-    const { query, ...filters } = req.query;
-    req.filters = filters;
-    req.feed = await getTwitterSearchFeed(query); // 99.9% of time in this function is spent running getFeed()
-    next();
+    const cacheInfo = await checkIfSendCache(req, res);
+    // if returns something, cache was not sent
+    if (cacheInfo) {
+        const { query, ...filters } = req.query;
+        const feed = await getTwitterSearchFeed(query); // 99.9% of time in this function is spent running getFeed()
+        updateCacheAndSend(feed, filters, cacheInfo, req, res);
+    }
 })
 
 app.get('/yt/c/:channelID/', async (req, res, next) => {
@@ -196,57 +201,67 @@ app.get('/yt/c/:channelID/', async (req, res, next) => {
     */
 
 
-
-
-    req.filters = req.query;
-    const url = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + req.params.channelID;
-    req.feed = await getFeed(url);
-    req.feed = await youtubeFormatting(req.feed);
-    next();
+    const cacheInfo = await checkIfSendCache(req, res);
+    // if returns something, cache was not sent
+    if (cacheInfo) {
+        const filters = req.query;
+        const url = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + req.params.channelID;
+        let feed = await getFeed(url);
+        feed = await youtubeFormatting(feed);
+        updateCacheAndSend(feed, filters, cacheInfo, req, res);
+    }
 })
 
-app.get('/yt/s/', async (req, res, next) => {
+app.get('/yt/s/', async (req, res) => {
     /*
     example URL:
     http://localhost:8000/yt/s/?query=tesla
     */
-    const { query, ...filters } = req.query;
-    req.filters = filters;
-    const url = `https://www.youtube.com/results?search_query=${query}&sp=CAI`;
-    req.feed = await getYTSearchFeed(url, query);    // end part of url is to sort by newest first
+
+    const cacheInfo = await checkIfSendCache(req, res);
+    // if returns something, cache was not sent
+    if (cacheInfo) {
+        const { query, ...filters } = req.query;
+        const url = `https://www.youtube.com/results?search_query=${query}&sp=CAI`;
+        let feed = await getYTSearchFeed(url, query);    // end part of url is to sort by newest first
 
 
 
 
-    // add this to filter
+        // add this to filter
 
 
 
 
-    // filter out items that have over 50% latin characters
-    req.feed.items = req.feed.items.filter(item => {
-        const latinChars = item.title.match(/[a-z]/gi)?.length;
-        const totalChars = item.title.length;
-        // non-english usually under 20%, english usually over 80%, so 
-        // split the difference
-        const percentLatin = latinChars / totalChars;
-        // add item if over 50% latin characters
-        return percentLatin > 0.5;
-    });
-    next();
-})
-
-// applied after every get request above
-app.use(async (req, res) => {
-    let feed = req.feed
-    // if-statement to ignore if its the homepage, not a feed request
-    if (feed) {
-        feed = await filter(feed, req.filters);
-        feed = await updateCache(feed, req.cacheInfo);
-        console.log(req.url); trackRequests.log("New");
-        res.send(feed);
+        // filter out items that have over 50% latin characters
+        feed.items = feed.items.filter((item: any) => {
+            const latinChars: number = item.title.match(/[a-z]/gi)?.length;
+            const totalChars: number = item.title.length;
+            // non-english usually under 20%, english usually over 80%, so 
+            // split the difference
+            const percentLatin = latinChars / totalChars;
+            // add item if over 50% latin characters
+            return percentLatin > 0.5;
+        });
+        updateCacheAndSend(feed, filters, cacheInfo, req, res);
     }
 });
+
+// applied after every get request above
+async function updateCacheAndSend(
+    feed: JSONFeed,
+    filters: any,
+    cacheInfo: any,
+    req: any,
+    res: any
+    ): Promise<void> {
+
+    feed = await filter(feed, filters);
+    feed = await updateCache(feed, cacheInfo);
+    console.log(req.url); trackRequests.log("New");
+    res.send(feed);
+
+}
 
 app.listen(PORT, () => {
     console.log(`Server has started on http://localhost:${PORT} 🚀`)

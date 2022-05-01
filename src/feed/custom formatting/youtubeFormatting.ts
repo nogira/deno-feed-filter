@@ -1,5 +1,7 @@
-export async function youtubeFormatting(feed) {
-    const formattedItems  = [];
+import { JSONFeed, JSONFeedItem } from '../feedTypes.ts';
+
+export async function youtubeFormatting(feed:JSONFeed):Promise<JSONFeed> {
+    const formattedItems: JSONFeedItem[]  = [];
     for (const item of feed.items) {
         const imageText = `<img width=\"50%\" src=\"${item.image}\"><br><br>`
         item.content_html = imageText + item.content_html

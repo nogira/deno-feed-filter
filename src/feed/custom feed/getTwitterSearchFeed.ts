@@ -1,5 +1,6 @@
-import { queryToTweets } from 'https://deno.land/x/deno_twitter_guest_api@v0.1.0/mod.ts'
-// import { queryToTweets } from '../../../../deno-twitter-guest-api/mod.ts'
+import { JSONFeed, JSONFeedItem } from '../feedTypes.ts';
+// import { queryToTweets } from 'https://deno.land/x/deno_twitter_guest_api@v0.1.0/mod.ts'
+import { queryToTweets } from '../../../../deno-twitter-guest-api/mod.ts'
 
 
 
@@ -20,20 +21,20 @@ EACH TWITTER FEED BASED ON THE AVERAGE TWEETS PER DAY
 
 
 
-export async function getTwitterSearchFeed(query) {
+export async function getTwitterSearchFeed(query: string) {
 
     const tweets = await queryToTweets(query);
 
-    const JSONFeed = {
+    const JSONFeed: JSONFeed = {
         version: "https://jsonfeed.org/version/1.1",
         title: `Twitter Query - ${query}`,
         home_page_url: "https://www.twitter.com/",
+        items: [],
     }
     
-    const JSONFeedItems = [];
     for (let tweet of tweets) {
 
-        const item = {
+        const item: JSONFeedItem = {
             id: tweet.id,
         }
 
@@ -43,7 +44,7 @@ export async function getTwitterSearchFeed(query) {
          * remove shortened image urls and convert other urls from shortened to 
          * full
          */
-        function parseURLsInText(text, tweet) {
+        function parseURLsInText(text: string, tweet: any) {
             const urls = tweet.urls
             if (urls) {
                 for (const url of urls) {
@@ -69,7 +70,7 @@ export async function getTwitterSearchFeed(query) {
          * images and/or has video
          * @param media
          */
-        function parseMedia(media) {
+        function parseMedia(media: any) {
             let imageTags = "";
             let hasImages, hasVideo;
             if (media) {
@@ -101,7 +102,7 @@ export async function getTwitterSearchFeed(query) {
         item.title = "🐦";
         if (tweet.isThread) {
             item.title += "🧵";
-            item.threadID = tweet.threadID;
+            item._threadId = tweet.threadID;
         }
         if (hasImages) {
             item.title += "📷";
@@ -114,7 +115,7 @@ export async function getTwitterSearchFeed(query) {
         // example twitter format: "Mon Mar 14 06:07:25 +0000 2022"
         const twitterDate = tweet.date;
         const year = twitterDate.substring(26, 30);
-        const monthRef = {
+        const monthRef: any = {
             "Jan": "01",
             "Feb": "02",
             "Mar": "03",
@@ -128,7 +129,7 @@ export async function getTwitterSearchFeed(query) {
             "Nov": "11",
             "Dec": "12",
         }
-        const month = monthRef[twitterDate.substring(4, 7)];
+        const month: string = monthRef[twitterDate.substring(4, 7)];
         const day = twitterDate.substring(8, 10);
         const hours = twitterDate.substring(11, 13);
         const minutes = twitterDate.substring(14, 16);
@@ -137,11 +138,13 @@ export async function getTwitterSearchFeed(query) {
         const ISODate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
         item.date_published = ISODate;
         
-        item.authors = [{ name: tweet.user }];
+        item.authors = [{
+            name: tweet.user,
+            url: `https://www.twitter.com/${tweet.user}`
+        }];
 
-        JSONFeedItems.push(item);
+        JSONFeed.items.push(item);
     }
-    JSONFeed.items = JSONFeedItems;
 
     return JSONFeed;
 }

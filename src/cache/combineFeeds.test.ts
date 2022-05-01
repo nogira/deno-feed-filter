@@ -1,21 +1,21 @@
-import { getFeed } from '../feed/getFeed.js';
-import { combineFeeds } from './combineFeeds.js';
+import { getFeed } from '../feed/getFeed.ts';
+import { combineFeeds } from './combineFeeds.ts';
 import { assert } from 'https://deno.land/std/testing/asserts.ts';
 
-const clone = (obj) => JSON.parse(JSON.stringify(obj));
+const clone = (obj: any) => JSON.parse(JSON.stringify(obj));
 
 Deno.test("combineFeeds() :: basic feed combiner", async () => {
     const url = "https://www.youtube.com/feeds/videos.xml?channel_id=UC5WjFrtBdufl6CZojX3D8dQ";
     const feed = await getFeed(url);
     // using full feed to imitate new feed. deep clone to prevent mutation
-    const newFeed = JSON.parse(JSON.stringify(feed));
+    const newFeed: any = JSON.parse(JSON.stringify(feed));
     // remove first 5 items of feed
     feed.items.splice(0, 5); // using truncated feed to imitate old feed
 
     const updatedFeed = await combineFeeds(feed, newFeed);
 
-    const newFeedIds = newFeed.items.map(item => item.id);
-    const updatedFeedIds = updatedFeed.items.map(item => item.id);
+    const newFeedIds: string[] = newFeed.items.map((item: any) => item.id);
+    const updatedFeedIds: string[] = updatedFeed.items.map(item => item.id);
     for (const i in newFeedIds) {
         assert(newFeedIds[i] === updatedFeedIds[i]);
     }
@@ -51,7 +51,12 @@ Deno.test("combineFeeds() :: >100 items combined feed combiner", async () => {
     console.log("updatedFeed length: ", updatedFeed.items.length);
 
     const newestUpdatedItem = updatedFeed.items[0];
-    const newestDatePost = Date.parse(newestUpdatedItem.date_published);
+    const date = newestUpdatedItem.date_published;
+    let newestDatePost;
+    if (date) {
+        newestDatePost = Date.parse(date);
+    }
+    
     // console.log("NEWEST-post: ", newestDatePost, newestUpdatedItem.id);
 
     assert(newFeed.items !== updatedFeed.items);

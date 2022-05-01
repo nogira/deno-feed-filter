@@ -1,5 +1,5 @@
-import { filter } from './filter.js';
-import { getFeed } from './getFeed.js';
+import { filter } from './filter.ts';
+import { getFeed } from './getFeed.ts';
 import { assert } from 'https://deno.land/std/testing/asserts.ts';
 
 Deno.test("filter() :: test filter of youtube feed with no filters", async () => {

@@ -4,7 +4,7 @@ deno test --allow-net src/feed/xmlNestedKeySelector.test.js
 
 */
 
-import { xmlNestedKeySelector } from "./xmlNestedKeySelector.js"
+import { xmlNestedKeySelector } from "./xmlNestedKeySelector.ts"
 import { assert } from 'https://deno.land/std/testing/asserts.ts';
 
 Deno.test("xmlNestedKeySelector() :: basic test", async () => {
@@ -16,12 +16,12 @@ Deno.test("xmlNestedKeySelector() :: basic test", async () => {
     // ideally operator overload like: item~"thing.thing.thing"
 
     const s = xmlNestedKeySelector;
-    const feedJSON = {
-        key1: {key2: {key3: {"#text": 10}}}
+    const feedJSON: any = {
+        key1: {key2: {key3: {"#text": "10"}}}
     }
     
     //           feedJSON.key1?.key2?.key3?.["#text"]
     const test = s(feedJSON, "key1.key2.key3");
 
-    assert(test === 10);
+    assert(test === "10");
 });

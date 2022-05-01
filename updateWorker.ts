@@ -5,7 +5,7 @@ UPDATE CACHE ON A LOOP EVERY 2HRS BUT ONLY FROM 6AM TO 12AM
 */
 
 import { sleep } from './src/sleep.js';
-import { PORT, UPDATE_FREQ, cacheIndex } from './app.js'
+import { PORT, UPDATE_FREQ, cacheIndex } from './app.ts'
 
 console.log("Update Worker Running...");
 

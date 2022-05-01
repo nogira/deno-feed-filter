@@ -1,11 +1,11 @@
-import { cacheIndex } from '../../app.js';
+import { cacheIndex } from '../../app.ts';
 
-export async function getCacheInfo(reqURL) {
+export async function getCacheInfo(reqURL: string) {
     const cacheID = reqURL.replace(/^.*?0\/|\W/g, "");
     const urlInCacheIndex = cacheIndex[reqURL];
 
     // if url IS in cache index, make sure it's also in file cache
-    let urlHasCacheFile;
+    let urlHasCacheFile: boolean = false;
     if (urlInCacheIndex) {
         await Deno.stat(`./feed_cache/${cacheID}.json`)
             .then(() => {urlHasCacheFile = true})

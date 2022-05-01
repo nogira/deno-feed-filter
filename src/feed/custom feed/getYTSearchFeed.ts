@@ -1,9 +1,12 @@
-export async function getYTSearchFeed(url, query) {
-    const htmlStr = await fetch(url)
+import { JSONFeed, JSONFeedItem } from '../feedTypes.ts';
+
+export async function getYTSearchFeed(url: string, query: string) {
+    const htmlStr: any = await fetch(url)
         .then(r => r.text())
         .catch(() => {
             console.log("Error fetching feed:\n" + url);
         });
+
     let data = htmlStr.match(/(?<=<script.+?var ytInitialData = ).+?(?=;<\/script>)/)[0];
         data = JSON.parse(data);
     let videos;
@@ -14,18 +17,18 @@ export async function getYTSearchFeed(url, query) {
         console.log("Youtube search object structure changed.")
     }
     
-    const JSONFeed = {
+    const JSONFeed: JSONFeed = {
         version: "https://jsonfeed.org/version/1.1",
         title: `YouTube Query - ${query}`,
         home_page_url: "https://www.youtube.com/",
+        items: [],
     }
 
-    const JSONFeedItems = [];
     for (let video of videos) {
         video = video.videoRenderer;
         if (! video) { continue };
 
-        const item = {
+        const item: JSONFeedItem = {
             id: video.videoId,
             url: `https://www.youtube.com/watch?v=${video.videoId}`,
             title: video.title.runs[0].text,
@@ -36,7 +39,7 @@ export async function getYTSearchFeed(url, query) {
             ?.replace(/(?<=\.jpg).*/, "");
         const img = `<img width=\"50%\" src=\"${imageURL}\"><br><br>`;
         const desc = video.detailedMetadataSnippets?.[0]?.snippetText?.runs
-            ?.map(x => x.text)?.join("") || "";
+            ?.map((x: any) => x.text)?.join("") || "";
         item.content_html = (img + desc);
 
         const timeText = video.publishedTimeText?.simpleText;
@@ -60,15 +63,14 @@ export async function getYTSearchFeed(url, query) {
         item.date_published = ISODate;
 
         item.authors = [{ name: video.longBylineText?.runs?.[0]?.text }];
-        item.views = Number(video.viewCountText?.simpleText
+        item._views = Number(video.viewCountText?.simpleText
                         ?.replace(/ views?|\.|,/g, "")
                         .replace("K", "000")
                         .replace("M", "000000")
                         .replace("No", "0"));
 
-        JSONFeedItems.push(item);
+        JSONFeed.items.push(item);
     }
-    JSONFeed.items = JSONFeedItems;
 
     return JSONFeed;
 }

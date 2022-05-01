@@ -1,17 +1,24 @@
+import { JSONFeed } from './feedTypes.ts';
+
 /**
  * simplify calling nested keys from xml object:
  * - before:  `feedJSON.key1?.key2?.key3?.["#text"];`
  * - after:   `s(feedJSON, "key1.key2.key3");`
  * @param {*} feed 
- * @param {*} selectorArray 
+ * @param {*} selector
  * @returns 
  */
-export function xmlNestedKeySelector(feed, selector) {
+export function xmlNestedKeySelector(
+    feed: JSONFeed,
+    selector: string | string[]
+    ): string {
 
-    let obj = feed;
-    let arr = selector;
-    if (typeof arr !== 'object') {
-        arr = arr.split(".");
+    let obj: any = feed;
+    let arr: string[];
+    if (typeof selector !== 'object') {
+        arr = selector.split(".");
+    } else {
+        arr = selector;
     }
     if (arr.length > 0) {
         // console.log(JSON.stringify(obj))
@@ -19,7 +26,7 @@ export function xmlNestedKeySelector(feed, selector) {
         obj = obj?.[arr[0]];
         // if key not present, return null
         if (!(obj ?? false)) {
-            return null;
+            return "";
         }
         arr.shift();
         return xmlNestedKeySelector(obj, arr);

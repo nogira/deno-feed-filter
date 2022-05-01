@@ -4,7 +4,7 @@ deno test --allow-net src/feed/getFeed.test.js
 
 */
 
-import { getFeed } from './getFeed.js';
+import { getFeed } from './getFeed.ts';
 import { assert } from 'https://deno.land/std/testing/asserts.ts';
 
 // youtube

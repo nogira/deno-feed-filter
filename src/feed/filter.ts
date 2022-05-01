@@ -1,15 +1,17 @@
-export async function filter(feed, filters) {
+import { JSONFeed, JSONFeedItem } from './feedTypes.ts';
+
+export async function filter(feed: JSONFeed, filters: any) {
     /* was going to insert the filter here instead of running filter
     after, but the computation is so small compared to fetch so idc */
 
-    const items = feed.items
+    const items: JSONFeedItem[] = feed.items
     // simple way to pass filter key such as "author" to get an item's author
-    const filterKeyToItemKey = {
-        title: (item) => item.title,
-        desc: (item) => item.content_html,
-        author: (item) => item.authors[0]?.name,
+    const filterKeyToItemKey: any = {
+        title: (item: JSONFeedItem) => item.title,
+        desc: (item: JSONFeedItem) => item.content_html,
+        author: (item: JSONFeedItem) => item.authors?.[0]?.name,
     };
-    const filteredItems = [];
+    const filteredItems: JSONFeedItem[] = [];
     loop1:
     for (const item of items) {
 
@@ -40,14 +42,15 @@ export async function filter(feed, filters) {
                 }
             } else if (key == "min_views") {
                 // item should have at least the min views
-                if (item.views < Number(val)) {
+                const itemViews: any = item?._views;
+                if (itemViews < Number(val)) {
                     // skip adding item to filteredItems
                     continue loop1;
                 }
             } else if (key == "no_self_retweets" && val == "true") {
                 /* remove retweets of mid-thread tweets from threads that have 
                 been posted/retweeted before */
-                const threadID = item.threadID;
+                const threadID = item._threadId;
                 const notFirstTweetinThread = threadID !== item.id;
                 if (threadID && notFirstTweetinThread) {
                     // if main tweet (threadID) is already in feed, discard the 
@@ -64,7 +67,7 @@ export async function filter(feed, filters) {
         }
         // skip video items with 0 views, as it means the video hasn't been 
         // posted yet
-        if (item.views === 0) { continue loop1};
+        if (item._views === 0) { continue loop1};
 
         // if item has passsed all filters, add it to the filteredItems
         filteredItems.push(item);

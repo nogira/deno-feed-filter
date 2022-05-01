@@ -1,5 +1,6 @@
 import { XMLParser } from 'https://cdn.skypack.dev/fast-xml-parser'
-import { xmlNestedKeySelector as s } from './xmlNestedKeySelector.js';
+import { xmlNestedKeySelector as s } from './xmlNestedKeySelector.ts';
+import { JSONFeed, JSONFeedItem, JSONFeedAuthor } from './feedTypes.ts';
 
 /*
 
@@ -11,68 +12,6 @@ https://www.jsonfeed.org/mappingrssandatom/
 https://www.w3schools.com/xml/xml_rss.asp#rssref
 
 */
-
-/**
- * https://www.jsonfeed.org/version/1.1/
- */
-interface JSONFeed {
-    version: string;
-    title: string;
-    home_page_url?: string;
-    feed_url?: string;
-    description?: string;
-    user_comment?: string;
-    next_url?: string;
-    icon?: string;
-    favicon?: string;
-    authors?: JSONFeedAuthor[];
-    language?: string;
-    expired?: boolean;
-    hubs?: JSONHub[];
-    items: JSONFeedItem[];
-}
-interface JSONFeedAuthor {
-    name?: string;
-    url?: string;
-    avatar?: string;
-}
-interface JSONHub {
-    type: string;
-    url: string;
-}
-interface JSONFeedItem {
-    id: string;
-    url?: string;
-    external_url?: string;
-    title?: string;
-    content_html?: string;
-    content_text?: string;
-    summary?: string;
-    image?: string;
-    banner_image?: string;
-    date_published?: string;
-    date_modified?: string;
-    authors?: JSONFeedAuthor[];
-    tags?: string[];
-    language?: string;
-    attachments?: JSONFeedAttachment[];
-    // custom fields (must start with _)
-    _views?: number;
-}
-/**
- * @param mime_type - The mime type of the attachment. 
- * e.g. image/jpeg, audio/mpeg, video/mp4
- */
-interface JSONFeedAttachment {
-    url: string;
-    mime_type: string;
-    title?: string;
-    size_in_bytes?: number;
-    duration_in_seconds?: number;
-}
-
-
-
 
 /**
  * Convert an rss or atom feed to a JSONFeed
