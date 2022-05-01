@@ -302,6 +302,5 @@ function getAuthors(obj: any): JSONFeedAuthor[] {
                 }
             }
         }
-        console.log(authors);
     return authors;
 }
