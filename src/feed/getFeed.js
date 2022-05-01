@@ -1,4 +1,4 @@
-import { toJSONFeed } from './toJSONFeed.js';
+import { xmlFeedToJSONFeed } from './xmlFeedToJSONFeed.ts';
 
 export async function getFeed(url) {
     const req = await fetch(url).catch(() => {
@@ -8,7 +8,7 @@ export async function getFeed(url) {
 
     // if RSS or Atom, convert to JSON Feed, else grab the json feed
     if (feed.includes('<rss') || feed.includes('<feed')) {
-        const JSONFeed = toJSONFeed(feed);
+        const JSONFeed = xmlFeedToJSONFeed(feed);
         return JSONFeed;
     } else {
         return await req.json();
