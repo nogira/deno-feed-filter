@@ -26,7 +26,7 @@ import { youtubeFormatting } from './src/feed/custom formatting/youtubeFormattin
 
 const app = opine();
 export const PORT = 8000;
-export const UPDATE_FREQ = "1hrs"; // 🚨🚨🚨🚨 should swap to default every day at 6am (and no requests from 12am to 6am), but can be changed
+export const UPDATE_FREQ = "1hrs"; // TODO: should swap to default every day at 6am (and no requests from 12am to 6am), but can be changed
 export let cacheIndex: any;
 // check if folder and file exists, if not, create it
 // throws error if folder/file doesn't exist
@@ -47,6 +47,8 @@ const trackRequests: any = {
         console.log(`${type}: `, this[type]);
     },
 };
+
+// TODO: send fetch requests to worker threads
 
 // input boxes to build urls
 app.get('/', async (req, res) => {
@@ -86,6 +88,14 @@ app.get('/', async (req, res) => {
         <b>Youtube channel</b>:<br>
         <input type="text" id="yt-channel" value="${exampleInputs.youtubeChannel}" style="width:30%">
         → <span id="yt-channel"></span><br>
+        <br>
+        <hr>
+        <br>
+
+
+        <h2>Cached</h2>
+        <p> * editable list of cached feeds * </p>
+
 
         <script>
             const twitterQueryInput = document.querySelector('input#twitter-query');
@@ -224,15 +234,7 @@ app.get('/yt/s/', async (req, res) => {
         const { query, ...filters } = req.query;
         const url = `https://www.youtube.com/results?search_query=${query}&sp=CAI`;
         let feed = await getYTSearchFeed(url, query);    // end part of url is to sort by newest first
-
-
-
-
-        // add this to filter
-
-
-
-
+        // TODO: add this to filter
         // filter out items that have over 50% latin characters
         feed.items = feed.items.filter((item: any) => {
             const latinChars: number = item.title.match(/[a-z]/gi)?.length;
@@ -267,16 +269,9 @@ app.listen(PORT, () => {
     console.log(`Server has started on http://localhost:${PORT} 🚀`)
 });
 
-
-
-
-
-
-
-
 /*
 
-STILL NEED A WAY TO DELETE CACHED FILES WHEN THEY ARE NEVER REQUESTED BY 
+TODO: STILL NEED A WAY TO DELETE CACHED FILES WHEN THEY ARE NEVER REQUESTED BY 
 ANYTHING OTHER THAN THE AUTO-CACHE WHILE-LOOP
 
 SHOULD JUST TRACK THE NUMBER OF CACHE REQUESTS, AND IF 0 IN 1 WEEK, DELETE
@@ -287,22 +282,15 @@ ALL URLS EVERY TIME THE CODE IS UPDATED AND SAVED
 
 */
 
-
-
 // while (true) {
+    // cache getCache requests (i.e. requests from NetNewsWire, as auto-requests
+    //from here will only ever update the cache, not call the cache)
 //     // every 20 min
-//     // if last request was >10min ago
+//     // if last request was >2min ago
 //     // 1) delete getCache cache
 //     // 2) delete feed caches that have zero requests ONLY if >50% of requests have caches
+//     // 3) reset getCache cache
 // }
-
-
-
-
-
-
-
-
 
 /*
 UPDATE RESULTS X HOURS SO FEEDS ARE INSTANTLY FETCHED BY FEED VIEWER SINCE FEEDS

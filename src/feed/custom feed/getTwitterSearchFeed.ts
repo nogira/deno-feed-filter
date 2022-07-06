@@ -2,24 +2,13 @@ import { JSONFeed, JSONFeedItem } from '../feedTypes.ts';
 // import { queryToTweets } from 'https://deno.land/x/deno_twitter_guest_api@v0.1.0/mod.ts'
 import { queryToTweets } from '../../../../deno-twitter-guest-api/mod.ts'
 
-
-
-
-
 /*
 
-IT SEEMS THIS FAILS TO GET RETWEETS SO TRY FIX !!!
-include:nativeretweets fixes it
-
-ALSO SEEMS TO EXCLUDE SOME TWEETS. GETTING DIRECT FROM PROFILE MIGHT BE ONLY 
-SOLUTION. THUS MIGHT BE FORCED TO CALL A SHIT-TONNE, SO PERHAPS VARY THE TIME OF
-EACH TWITTER FEED BASED ON THE AVERAGE TWEETS PER DAY
+TODO: SEEMS TO EXCLUDE SOME TWEETS. GETTING DIRECT FROM PROFILE MIGHT BE ONLY 
+SOLUTION. THUS MIGHT BE FORCED TO CALL A SHIT-TONNE, SO PERHAPS VARY THE UPDATE 
+FREQUENCY OF EACH TWITTER FEED BASED ON THE AVERAGE TWEETS PER DAY
 
 */
-
-
-
-
 
 export async function getTwitterSearchFeed(query: string) {
 

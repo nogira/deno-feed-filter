@@ -148,7 +148,7 @@ export async function xmlFeedToJSONFeed(feed: string): Promise<JSONFeed> {
             item.title = title;
         }
 
-        // maybe do content_html as default (converting any non-html to 
+        // TODO: maybe do content_html as default (converting any non-html to 
         // html), but also allow user to specify     🚨🚨   🚨🚨   🚨🚨🚨
         const content_text = "";
         if (content_text) {
@@ -178,19 +178,9 @@ export async function xmlFeedToJSONFeed(feed: string): Promise<JSONFeed> {
         //     item.banner_image = banner_image;
         // }
 
-
-
-
-
-        // need to get the date parsing right
+        // TODO: need to get the date parsing right
         // e.g. if date is "Sun, 01 May 2022 06:30:00 GMT"
         //   /[a-zA-z]{3}, \d{2} [a-zA-z]{3} \d{4} \d{2}:\d{2}:\d{2} [A-Z]{3}/
-
-
-
-
-
-
 
         const date_published = s(rawItem,"pubDate") || s(rawItem,"published");
         if (date_published) {
