@@ -1,3 +1,7 @@
+<b>this project is abandoned. the replacement project is [here](https://github.com/nogira/tiny-feed) (gui feed app instead of CLI filter server)</b>
+
+<br>
+
 # Deno feed filter
 
 Small self-hosted server that allows you to input rss/atom/json feeds, filter them, then output them as new localhost urls which you can use in a feed viewer app on your computer.
