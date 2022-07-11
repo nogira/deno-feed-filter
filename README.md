@@ -1,4 +1,4 @@
-<b>this project is abandoned. the replacement project is [here](https://github.com/nogira/tiny-feed) (gui feed app instead of CLI filter server)</b>
+<b>this project is abandoned. the replacement project is [here](https://github.com/nogira/tinyfeed) (gui feed app instead of CLI filter server)</b>
 
 <br>
 
