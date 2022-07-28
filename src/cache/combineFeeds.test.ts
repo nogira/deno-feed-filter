@@ -1,3 +1,9 @@
+/*
+
+deno test --allow-net src/cache/combineFeeds.test.ts
+
+*/
+
 import { getFeed } from '../feed/getFeed.ts';
 import { combineFeeds } from './combineFeeds.ts';
 import { assert } from 'https://deno.land/std/testing/asserts.ts';

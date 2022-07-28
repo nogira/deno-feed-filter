@@ -1,6 +1,6 @@
 /*
 
-deno test --allow-net src/feed/xmlNestedKeySelector.test.js
+deno test --allow-net src/feed/xmlNestedKeySelector.test.ts
 
 */
 

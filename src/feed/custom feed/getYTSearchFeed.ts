@@ -26,7 +26,7 @@ export async function getYTSearchFeed(url: string, query: string) {
 
     for (let video of videos) {
         video = video.videoRenderer;
-        if (! video) { continue };
+        if (! video) { continue }
 
         const item: JSONFeedItem = {
             id: video.videoId,

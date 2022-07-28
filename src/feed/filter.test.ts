@@ -1,3 +1,9 @@
+/*
+
+deno test --allow-net src/feed/filter.test.ts
+
+*/
+
 import { filter } from './filter.ts';
 import { getFeed } from './getFeed.ts';
 import { assert } from 'https://deno.land/std/testing/asserts.ts';

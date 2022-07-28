@@ -1,6 +1,6 @@
 /*
 
-deno test --allow-net src/feed/getFeed.test.js
+deno test --allow-net src/feed/getFeed.test.ts
 
 */
 

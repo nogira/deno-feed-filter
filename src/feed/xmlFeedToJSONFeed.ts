@@ -41,7 +41,7 @@ export async function xmlFeedToJSONFeed(feed: string): Promise<JSONFeed> {
     
     const JSONFeed: JSONFeed = {
         version: "https://jsonfeed.org/version/1.1",
-        title: s(feedJSON,"title"),
+        title: s(feedJSON,"title") || "",
         items: [],
     }
     // sort links
@@ -132,7 +132,7 @@ export async function xmlFeedToJSONFeed(feed: string): Promise<JSONFeed> {
     for (const rawItem of rawItems) {
 
         const item: JSONFeedItem = {
-            id: s(rawItem,"guid") || s(rawItem,"id"),
+            id: s(rawItem,"guid") || s(rawItem,"id") || "",
         }
 
         const url = rawItem?.link?.["@_href"] || s(rawItem,"link") || rawItem?.link;

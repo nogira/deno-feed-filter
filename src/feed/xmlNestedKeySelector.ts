@@ -1,35 +1,26 @@
-import { JSONFeed } from './feedTypes.ts';
+type Optional<T> = T | undefined
 
 /**
  * simplify calling nested keys from xml object:
  * - before:  `feedJSON.key1?.key2?.key3?.["#text"];`
  * - after:   `s(feedJSON, "key1.key2.key3");`
- * @param {*} feed 
+ * @param {*} object you are selecting from
  * @param {*} selector
  * @returns 
  */
-export function xmlNestedKeySelector(
-    feed: JSONFeed,
-    selector: string | string[]
-    ): string {
+export function xmlNestedKeySelector(obj: any, selector: string | string[]
+    ): Optional<string> {
 
-    let obj: any = feed;
-    let arr: string[];
-    if (typeof selector !== 'object') {
-        arr = selector.split(".");
-    } else {
-        arr = selector;
-    }
-    if (arr.length > 0) {
-        // console.log(JSON.stringify(obj))
-        // console.log(JSON.stringify(arr))
-        obj = obj?.[arr[0]];
-        // if key not present, return null
-        if (!(obj ?? false)) {
-            return "";
-        }
-        arr.shift();
-        return xmlNestedKeySelector(obj, arr);
+    // create selector array from initial string to make key selection simpler
+    if (typeof selector !== 'object') { selector = selector.split("."); }
+
+    // if still selectors to be applied, apply them
+    if (selector.length > 0) {
+        obj = obj?.[selector[0]];
+        // if key not present, return undefined
+        if (obj === undefined) { return undefined; }
+        selector.shift();
+        return xmlNestedKeySelector(obj, selector);
     }
     return obj?.["#text"];
 }
